@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, CreditCard } from 'lucide-react';
+import { Menu, X, CreditCard, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
@@ -49,6 +49,10 @@ const Header = () => {
           <button onClick={() => navigateToSection('features')} className="text-foreground/80 hover:text-cardwise-teal-500 transition-colors">Features</button>
           <button onClick={() => navigateToSection('compare')} className="text-foreground/80 hover:text-cardwise-teal-500 transition-colors">Compare Cards</button>
           <Link to="/learning-center" className="text-foreground/80 hover:text-cardwise-teal-500 transition-colors">Learning Center</Link>
+          <Link to="/spending-analytics" className="text-foreground/80 hover:text-cardwise-teal-500 transition-colors flex items-center gap-1">
+            <BarChart2 className="h-4 w-4" />
+            Analytics
+          </Link>
           <button onClick={() => navigateToSection('profile')} className="text-foreground/80 hover:text-cardwise-teal-500 transition-colors">Create Profile</button>
           <Button className="bg-cardwise-teal-500 hover:bg-cardwise-teal-600" asChild>
             <Link to="/">Get Started</Link>
@@ -88,6 +92,14 @@ const Header = () => {
               onClick={toggleMenu}
             >
               Learning Center
+            </Link>
+            <Link 
+              to="/spending-analytics" 
+              className="text-foreground/80 hover:text-cardwise-teal-500 transition-colors py-2 flex items-center gap-1"
+              onClick={toggleMenu}
+            >
+              <BarChart2 className="h-4 w-4" />
+              Analytics
             </Link>
             <button 
               onClick={() => navigateToSection('profile')}
