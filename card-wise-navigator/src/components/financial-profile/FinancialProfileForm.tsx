@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { Spinner } from '@/components/ui/spinner';
 import FinancialProfileStep from './FinancialProfileStep';
 import FinancialProfileStepper from './FinancialProfileStepper';
 import FinancialProfileAssessment from './FinancialProfileAssessment';
@@ -10,11 +12,70 @@ import ExpenditurePatternAnalysis from './ExpenditurePatternAnalysis';
 import BehavioralMetrics from './BehavioralMetrics';
 import LifestyleIndicators from './LifestyleIndicators';
 import AspirationalFactors from './AspirationalFactors';
+import axios from 'axios';
+
+// Define the type for the profile form data to avoid type errors
+interface ProfileFormData {
+  annualIncome: number;
+  debtToIncomeRatio: {
+    monthlyDebt: number;
+    monthlyIncome: number;
+    notSure: boolean;
+  };
+  creditScoreRange: string;
+  financialObligations: string[];
+  customObligations: any[];
+  monthlySpending: Record<string, number>;
+  transactionFrequency: {
+    weeklyTransactions: number;
+    averageTransactionValue: number;
+    largestRecurringExpense: number;
+  };
+  seasonalSpending: {
+    highestSpendingMonths: string;
+    seasonalCategories: string;
+    annualLargePurchases: string;
+  };
+  paymentHabits: string;
+  cardUsage: {
+    monthlySpendingPercentage: number;
+    activeCards: number;
+    primaryCardPercentage: number;
+  };
+  preferredPaymentMethods: Record<string, string>;
+  travelFrequency: {
+    domesticTrips: number;
+    internationalTrips: number;
+    averageSpending: number;
+    accommodationPreferences: string;
+  };
+  shoppingPreferences: {
+    onlinePercentage: number;
+    favoriteRetailers: string;
+    discretionarySpending: number;
+    topCategories: string;
+  };
+  lifestyleActivities: string[];
+  customActivities: string;
+  rewardPreferences: Record<string, number>;
+  premiumServices: string[];
+  feeTolerances: {
+    maximumAnnualFee: number;
+    justifyingFeatures: string;
+    minimumRewardValue: number;
+  };
+  prestigeImportance: string;
+  [key: string]: any; // Allow any additional properties
+}
 
 const FinancialProfileForm = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
+  const formRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(false);
+  
+  const [formData, setFormData] = useState<ProfileFormData>({
     // Financial Profile Assessment
     annualIncome: 75000,
     debtToIncomeRatio: {
@@ -98,67 +159,120 @@ const FinancialProfileForm = () => {
 
   const totalSteps = 5;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Profile data submitted:", formData);
-    toast({
-      title: "Profile created!",
-      description: "Your comprehensive financial profile has been saved successfully.",
-      duration: 3000,
-    });
+    setLoading(true);
+    
+    try {
+      console.log("Submitting profile data:", formData);
+      
+      // Make an API call to the backend to process the form data
+      const response = await axios.post('/api/cards/get_recommendations/', formData);
+      
+      if (response.data) {
+        console.log("Recommendations received:", response.data);
+        
+        // Show success toast
+        toast({
+          title: "Profile created!",
+          description: "Your comprehensive financial profile has been saved successfully.",
+          duration: 3000,
+        });
+        
+        // Navigate to the recommendations page with the data
+        navigate('/recommendations', { state: response.data });
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      
+      // Show error toast
+      toast({
+        title: "Error",
+        description: "There was a problem processing your profile. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const nextStep = () => {
+  const nextStep = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default to avoid page scrolling
+    
     if (step < totalSteps) {
       setStep(step + 1);
-      window.scrollTo(0, 0);
+      // Keep the scroll position
+      if (formRef.current) {
+        setTimeout(() => {
+          formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
     } else {
       handleSubmit(new Event('submit') as unknown as React.FormEvent);
     }
   };
 
-  const prevStep = () => {
+  const prevStep = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default to avoid page scrolling
+    
     if (step > 1) {
       setStep(step - 1);
-      window.scrollTo(0, 0);
+      // Keep the scroll position
+      if (formRef.current) {
+        setTimeout(() => {
+          formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
     }
   };
 
-  // Fixed type error by correctly defining the expected type parameters
-  const updateFormData = (section: string, data: Record<string, any>) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section as keyof typeof prev],
+  // Handler for FinancialProfileAssessment component
+  const handleDebtToIncomeUpdate = (data: any) => {
+    setFormData({
+      ...formData,
+      debtToIncomeRatio: {
+        ...formData.debtToIncomeRatio,
         ...data
       }
-    }));
+    });
   };
 
-  // Fixed type error by correctly defining the expected type parameters
+  // Handler for ExpenditurePatternAnalysis component
+  const handleMonthlySpendingUpdate = (category: string, value: number) => {
+    setFormData({
+      ...formData,
+      monthlySpending: {
+        ...formData.monthlySpending,
+        [category]: value
+      }
+    });
+  };
+
+  // Generic handler for nested form data
   const updateNestedFormData = (section: string, subsection: string, data: any) => {
     if (section === '') {
       // Handle top-level updates
-      setFormData(prev => ({
-        ...prev,
+      setFormData({
+        ...formData,
         [subsection]: data
-      }));
+      });
     } else {
       // Handle nested updates
-      setFormData(prev => ({
-        ...prev,
+      setFormData({
+        ...formData,
         [section]: {
-          ...prev[section as keyof typeof prev],
+          ...formData[section],
           [subsection]: data
         }
-      }));
+      });
     }
   };
 
   return (
-    <section id="profile" className="py-16 bg-gradient-to-b from-white to-blue-50">
+    <section className="py-16 bg-gradient-to-b from-white to-blue-50">
       <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto" ref={formRef}>
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-blue-700">Create Your Financial Profile</h2>
             <p className="text-foreground/70 text-lg">
@@ -190,7 +304,7 @@ const FinancialProfileForm = () => {
                 <FinancialProfileStep isActive={step === 1}>
                   <FinancialProfileAssessment 
                     formData={formData} 
-                    updateFormData={updateFormData}
+                    updateFormData={handleDebtToIncomeUpdate}
                     updateNestedFormData={updateNestedFormData}
                   />
                 </FinancialProfileStep>
@@ -198,7 +312,7 @@ const FinancialProfileForm = () => {
                 <FinancialProfileStep isActive={step === 2}>
                   <ExpenditurePatternAnalysis 
                     formData={formData} 
-                    updateFormData={(section, data) => updateNestedFormData('monthlySpending', section, data)}
+                    updateFormData={handleMonthlySpendingUpdate}
                     updateNestedFormData={updateNestedFormData}
                   />
                 </FinancialProfileStep>
@@ -206,7 +320,7 @@ const FinancialProfileForm = () => {
                 <FinancialProfileStep isActive={step === 3}>
                   <BehavioralMetrics 
                     formData={formData} 
-                    updateFormData={(data) => setFormData({...formData, ...data})}
+                    updateFormData={(data) => setFormData({ ...formData, ...data })}
                     updateNestedFormData={updateNestedFormData}
                   />
                 </FinancialProfileStep>
@@ -214,7 +328,7 @@ const FinancialProfileForm = () => {
                 <FinancialProfileStep isActive={step === 4}>
                   <LifestyleIndicators 
                     formData={formData} 
-                    updateFormData={(data) => setFormData({...formData, ...data})}
+                    updateFormData={(data) => setFormData({ ...formData, ...data })}
                     updateNestedFormData={updateNestedFormData}
                   />
                 </FinancialProfileStep>
@@ -222,7 +336,7 @@ const FinancialProfileForm = () => {
                 <FinancialProfileStep isActive={step === 5}>
                   <AspirationalFactors 
                     formData={formData} 
-                    updateFormData={(data) => setFormData({...formData, ...data})}
+                    updateFormData={(data) => setFormData({ ...formData, ...data })}
                     updateNestedFormData={updateNestedFormData}
                   />
                 </FinancialProfileStep>
@@ -230,7 +344,7 @@ const FinancialProfileForm = () => {
             </CardContent>
             <CardFooter className="flex justify-between">
               {step > 1 ? (
-                <Button variant="outline" onClick={prevStep}>
+                <Button variant="outline" onClick={prevStep} disabled={loading}>
                   <ChevronLeft className="mr-2 h-4 w-4" />
                   Back
                 </Button>
@@ -240,9 +354,19 @@ const FinancialProfileForm = () => {
               <Button 
                 onClick={nextStep}
                 className="bg-blue-600 hover:bg-blue-700"
+                disabled={loading}
               >
-                {step < totalSteps ? 'Continue' : 'Get Recommendations'}
-                <ChevronRight className="ml-2 h-4 w-4" />
+                {loading ? (
+                  <>
+                    <span className="mr-2">Processing</span>
+                    <Spinner className="h-4 w-4" />
+                  </>
+                ) : (
+                  <>
+                    {step < totalSteps ? 'Continue' : 'Get Recommendations'}
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
               </Button>
             </CardFooter>
           </Card>

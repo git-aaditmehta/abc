@@ -177,7 +177,7 @@ const SimplifiedProfileForm: React.FC<ProfileFormProps> = ({ onSubmit }) => {
   ];
 
   return (
-    <section id="profile" className="py-16 bg-gradient-to-b from-white to-blue-50">
+    <section className="py-16 bg-gradient-to-b from-white to-blue-50">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto" ref={formRef}>
           <div className="text-center mb-12">

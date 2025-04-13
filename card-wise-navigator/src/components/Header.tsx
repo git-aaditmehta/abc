@@ -52,7 +52,7 @@ const Header = () => {
             <BarChart2 className="h-4 w-4" />
             Analytics
           </Link>
-          <button onClick={() => navigateToSection('profile')} className="text-foreground/80 hover:text-cardwise-teal-500 transition-colors">Create Profile</button>
+          <Link to="/create-profile" className="text-foreground/80 hover:text-cardwise-teal-500 transition-colors">Create Profile</Link>
           <Button className="bg-cardwise-teal-500 hover:bg-cardwise-teal-600" asChild>
             <Link to="/">Get Started</Link>
           </Button>
@@ -93,12 +93,13 @@ const Header = () => {
               <BarChart2 className="h-4 w-4" />
               Analytics
             </Link>
-            <button 
-              onClick={() => navigateToSection('profile')}
-              className="text-left text-foreground/80 hover:text-cardwise-teal-500 transition-colors py-2"
+            <Link 
+              to="/create-profile"
+              className="text-foreground/80 hover:text-cardwise-teal-500 transition-colors py-2"
+              onClick={toggleMenu}
             >
               Create Profile
-            </button>
+            </Link>
             <Button className="bg-cardwise-teal-500 hover:bg-cardwise-teal-600 w-full" asChild>
               <Link to="/" onClick={toggleMenu}>Get Started</Link>
             </Button>
