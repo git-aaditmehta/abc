@@ -48,7 +48,6 @@ const Header = () => {
         <nav className="hidden md:flex items-center space-x-6">
           <button onClick={() => navigateToSection('features')} className="text-foreground/80 hover:text-cardwise-teal-500 transition-colors">Features</button>
           <button onClick={() => navigateToSection('compare')} className="text-foreground/80 hover:text-cardwise-teal-500 transition-colors">Compare Cards</button>
-          <Link to="/learning-center" className="text-foreground/80 hover:text-cardwise-teal-500 transition-colors">Learning Center</Link>
           <Link to="/spending-analytics" className="text-foreground/80 hover:text-cardwise-teal-500 transition-colors flex items-center gap-1">
             <BarChart2 className="h-4 w-4" />
             Analytics
@@ -86,13 +85,6 @@ const Header = () => {
             >
               Compare Cards
             </button>
-            <Link 
-              to="/learning-center" 
-              className="text-foreground/80 hover:text-cardwise-teal-500 transition-colors py-2"
-              onClick={toggleMenu}
-            >
-              Learning Center
-            </Link>
             <Link 
               to="/spending-analytics" 
               className="text-foreground/80 hover:text-cardwise-teal-500 transition-colors py-2 flex items-center gap-1"
