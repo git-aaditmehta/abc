@@ -53,9 +53,6 @@ const Header = () => {
             Analytics
           </Link>
           <Link to="/create-profile" className="text-foreground/80 hover:text-cardwise-teal-500 transition-colors">Create Profile</Link>
-          <Button className="bg-cardwise-teal-500 hover:bg-cardwise-teal-600" asChild>
-            <Link to="/">Get Started</Link>
-          </Button>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -100,9 +97,6 @@ const Header = () => {
             >
               Create Profile
             </Link>
-            <Button className="bg-cardwise-teal-500 hover:bg-cardwise-teal-600 w-full" asChild>
-              <Link to="/" onClick={toggleMenu}>Get Started</Link>
-            </Button>
           </div>
         </div>
       )}
