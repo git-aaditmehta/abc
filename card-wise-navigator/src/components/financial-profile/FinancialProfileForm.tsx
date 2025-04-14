@@ -159,36 +159,132 @@ const FinancialProfileForm = () => {
 
   const totalSteps = 5;
 
+  // Format data for our Flask backend
+  const formatDataForBackend = () => {
+    // Calculate top spending categories
+    const spendingEntries = Object.entries(formData.monthlySpending);
+    spendingEntries.sort((a, b) => b[1] - a[1]); // Sort by spending amount (descending)
+    const topCategories = spendingEntries.slice(0, 3).map(([category, amount]) => ({
+      category, 
+      amount
+    }));
+
+    // Map credit score range to approximate numerical value for the model
+    const creditScoreMap: Record<string, number> = {
+      'excellent': 800,
+      'good': 700,
+      'fair': 650,
+      'poor': 550,
+      'unknown': 650 // Default to middle range if unknown
+    };
+    
+    const creditScore = creditScoreMap[formData.creditScoreRange] || 650;
+
+    return {
+      income: formData.annualIncome,
+      creditScore: creditScore,
+      maxAnnualFee: formData.feeTolerances.maximumAnnualFee,
+      spendingCategories: formData.monthlySpending,
+      topCategories: topCategories,
+      travelFrequency: {
+        domestic: formData.travelFrequency.domesticTrips,
+        international: formData.travelFrequency.internationalTrips
+      },
+      rewardPreferences: formData.rewardPreferences,
+      premiumServices: formData.premiumServices
+    };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
     try {
-      console.log("Submitting profile data:", formData);
+      console.log("Preparing profile data for submission");
       
-      // Make an API call to the backend to process the form data
-      const response = await axios.post('/api/cards/get_recommendations/', formData);
+      // Format data for the backend
+      const backendData = formatDataForBackend();
+      console.log("Formatted data for backend:", backendData);
       
-      if (response.data) {
-        console.log("Recommendations received:", response.data);
-        
-        // Show success toast
-        toast({
-          title: "Profile created!",
-          description: "Your comprehensive financial profile has been saved successfully.",
-          duration: 3000,
-        });
-        
-        // Navigate to the recommendations page with the data
-        navigate('/recommendations', { state: response.data });
+      const API_URL = 'http://localhost:5000/api/recommend';
+      console.log("Sending request to:", API_URL);
+      
+      // Make an API call to our Flask backend to process the form data
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Origin': window.location.origin
+        },
+        mode: 'cors',
+        credentials: 'omit',
+        body: JSON.stringify(backendData),
+      });
+
+      console.log("Response status:", response.status);
+      console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+      
+      if (!response.ok) {
+        let errorMessage;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || `Server responded with status: ${response.status}`;
+        } catch {
+          const errorText = await response.text();
+          errorMessage = `Server responded with status: ${response.status}. Details: ${errorText}`;
+        }
+        throw new Error(errorMessage);
       }
-    } catch (error) {
+      
+      const recommendations = await response.json();
+      console.log("Recommendations received:", recommendations);
+      
+      // Format the recommendations in the structure expected by the Recommendations component
+      const formattedRecommendations = {
+        recommendations: recommendations.map((card: any) => ({
+          card_name: card.card_name,
+          issuer: card.issuer,
+          annual_fee: card.annual_fee,
+          joining_fee: card.joining_fee,
+          rewards: card.rewards,
+          premium_services: card.premium_services,
+          travel_benefits: card.travel_benefits,
+          lifestyle_benefits: card.lifestyle_benefits,
+          match_percentage: card.match_percentage,
+          match_reasons: card.match_reasons || [
+            'Aligns with your spending patterns',
+            'Matches your reward preferences',
+            'Fits within your fee tolerance'
+          ]
+        })),
+        user_profile: {
+          top_categories: backendData.topCategories,
+          lifestyle_score: Math.min(100, Math.round(
+            (backendData.travelFrequency.domestic * 10) + 
+            (backendData.travelFrequency.international * 20) + 
+            (backendData.maxAnnualFee / 1000)
+          ))
+        }
+      };
+      
+      // Show success toast
+      toast({
+        title: "Profile created!",
+        description: "Your comprehensive financial profile has been saved successfully.",
+        duration: 3000,
+      });
+      
+      // Navigate to the recommendations page with the data
+      navigate('/recommendations', { state: formattedRecommendations });
+      
+    } catch (error: any) {
       console.error("Error submitting form:", error);
       
-      // Show error toast
+      // Show error toast with more specific error message
       toast({
         title: "Error",
-        description: "There was a problem processing your profile. Please try again.",
+        description: error.message || "There was a problem processing your profile. Please try again.",
         variant: "destructive",
         duration: 5000,
       });
